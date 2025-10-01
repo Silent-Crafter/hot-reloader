@@ -111,6 +111,9 @@ int run(char *file, int continuous) {
     do {
         pid_t pid = fork();
         if (pid == 0) {
+            // lazy clrscr() but idc
+            system("clear");
+
             execv(file, NULL);
             int err = errno;
             perror("execv");
@@ -139,6 +142,7 @@ int run(char *file, int continuous) {
 int main(int argc, char *argv[]) {
     if (argc != 4) {
         printf("Invalid number of arguments");
+        INFO("Usage\n" "hot-reload <dir to watch> <build script> <target binary>");
         return EXIT_FAILURE;
     }
 
