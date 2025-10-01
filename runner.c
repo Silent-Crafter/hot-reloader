@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
+
+#define RELOAD_TIME 10
 
 #define RED     "\033[31m"
 #define BLUE     "\033[34m"
@@ -47,10 +50,28 @@ int exists(char* path, enum __exist_opt opt) {
 int add_watch_recursively(char *path) {
 }
 
-int build(char *build_script) {
-}
+int run(char *file, int continuous) {
+    if (!exists(file, CHECK_FILE)) {
+        ERROR("File \"%s\" does not exist or is not a valid file", file);
+        errno = ENOENT;
+        return -1;
+    }
 
-int run(char *target_binary) {
+    do {
+        if (fork() == 0) {
+            execv(file, NULL);
+        }
+
+        wait(NULL);
+        if (!continuous) break;
+
+        printf("\n...............................................\n");
+        for (int i = RELOAD_TIME; i > 0; i--) {
+            printf("%d\n", i);
+            sleep(1);
+        }
+        printf("...............................................\n\n");
+    } while (continuous);
 }
 
 int main(int argc, char *argv[]) {
@@ -77,6 +98,32 @@ int main(int argc, char *argv[]) {
         ERROR("File \"%s\" does not exist", target_binary);
         exit(EXIT_FAILURE);
     }
+
+    pid_t child_proccess = -1;
+    do {
+        // int retval = run(build_script, 0);
+        // if (retval == -1) {
+        //     exit(EXIT_FAILURE);
+        // }
+
+        if (child_proccess != -1 && child_proccess != 0) {
+            kill(SIGKILL, child_proccess);
+            child_proccess = -1;
+        }
+
+        if (child_proccess == -1) {
+            child_proccess = fork();
+        }
+
+        // Child process to run the application
+        if (child_proccess == 0) {
+            int retval = run(target_binary, 1);
+            if (retval == -1) exit(EXIT_FAILURE);
+            else exit(EXIT_SUCCESS);
+        }
+
+        wait(NULL);
+    } while(1);
 
     return EXIT_SUCCESS;
 }
