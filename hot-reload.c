@@ -141,8 +141,7 @@ int run(char *file, int continuous) {
 
 int main(int argc, char *argv[]) {
     if (argc != 4) {
-        printf("Invalid number of arguments");
-        INFO("Usage\n" "hot-reload <dir to watch> <build script> <target binary>");
+        INFO("Usage: " "hot-reload <dir to watch> <build script> <target binary>");
         return EXIT_FAILURE;
     }
 
