@@ -140,14 +140,31 @@ int run(char *file, int continuous) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 4) {
-        INFO("Usage: " "hot-reload <dir to watch> <build script> <target binary>");
+    if (argc != 4 && argc != 6) {
+        INFO("Usage: " "hot-reload <dir to watch> <build script> <target binary> [-n <count>]");
         return EXIT_FAILURE;
     }
 
     char *watch_dir = argv[1];
     char *build_script = argv[2];
     char *target_binary = argv[3];
+    
+    // Parse optional -n flag
+    int max_runs = -1; // -1 means infinite (default behavior)
+    if (argc == 6) {
+        if (strcmp(argv[4], "-n") == 0) {
+            max_runs = atoi(argv[5]);
+            if (max_runs <= 0) {
+                ERROR("Invalid count for -n flag: must be a positive integer");
+                return EXIT_FAILURE;
+            }
+            INFO("Will run for maximum %d rebuild cycles", max_runs);
+        } else {
+            ERROR("Unknown flag: %s", argv[4]);
+            INFO("Usage: " "hot-reload <dir to watch> <build script> <target binary> [-n <count>]");
+            return EXIT_FAILURE;
+        }
+    }
 
     if (!exists(watch_dir, CHECK_DIR)) {
         ERROR("Directory \"%s\" does not exist", watch_dir);
@@ -166,6 +183,7 @@ int main(int argc, char *argv[]) {
 
     int fd = add_watch_recursive(watch_dir);
     int modified = 1;
+    int run_count = 0;
 
     pid_t child_proccess = -1;
     do {
@@ -181,6 +199,24 @@ int main(int argc, char *argv[]) {
             int retval = run(build_script, 0);
             if (retval == -1) {
                 exit(EXIT_FAILURE);
+            }
+            
+            // Increment run counter after successful rebuild
+            run_count++;
+            if (max_runs > 0) {
+                INFO("Rebuild cycle %d/%d completed", run_count, max_runs);
+            } else {
+                INFO("Rebuild cycle %d completed", run_count);
+            }
+            
+            // Check if we've reached the maximum number of runs
+            if (max_runs > 0 && run_count >= max_runs) {
+                INFO("Reached maximum run count (%d). Exiting.", max_runs);
+                if (child_proccess != -1 && child_proccess != 0) {
+                    kill(child_proccess, SIGKILL);
+                    signal(SIGCHLD, SIG_IGN);
+                }
+                break;
             }
         }
 
