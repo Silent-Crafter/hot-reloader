@@ -19,6 +19,13 @@ In the project directory:
 ```sh
 mkdir -p build
 cd build
-../configure --prefix=/usr/local
-make install
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
+make
+sudo make install
+```
+
+For debug builds:
+```sh
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+make
 ```

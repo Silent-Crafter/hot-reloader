@@ -14,7 +14,7 @@ BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man/man1
 
 # Source files
-SOURCES = hot-reload.c
+SOURCES = hot-reload.c utils.c
 OBJECTS = $(SOURCES:.c=.o)
 TARGET = $(PROJECT_NAME)
 

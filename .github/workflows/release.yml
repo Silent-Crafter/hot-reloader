@@ -22,13 +22,15 @@ jobs:
 
       - name: Build
         run: |
-          make clean
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
           make
 
       - name: Archive artifacts
         run: |
           TAR_NAME="hot-reload-${GITHUB_REF_NAME}-linux-amd64.tar.gz"
-          tar -czf "$TAR_NAME" hot-reload README.md || true
+          tar -czf "$TAR_NAME" -C build/bin hot-reload -C ../.. README.md || true
           echo "TAR_NAME=$TAR_NAME" >> $GITHUB_ENV
 
       - name: Upload artifact

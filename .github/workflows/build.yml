@@ -27,30 +27,44 @@ jobs:
         run: |
           gcc --version || true
           clang --version || true
-          make --version
+          cmake --version
 
       - name: Build (release)
-        run: make clean && make
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make
 
       - name: Build (debug)
-        run: make clean && make debug
+        run: |
+          rm -rf build
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Debug
+          make
 
       - name: Basic checks
         run: |
-          test -f hot-reload && test -x hot-reload
-          ./hot-reload 2>&1 | grep -q "Usage:"
+          test -f build/bin/hot-reload && test -x build/bin/hot-reload
+          ./build/bin/hot-reload 2>&1 | grep -q "Usage:"
 
       - name: Install and smoke test
         run: |
+          cd build
           sudo make install
           command -v hot-reload
           hot-reload 2>&1 | grep -q "Usage:"
-          sudo make uninstall
+          sudo rm -f /usr/local/bin/hot-reload
 
       - name: Static analysis (cppcheck)
-        run: cppcheck --enable=all --error-exitcode=1 hot-reload.c
+        run: cppcheck --enable=all --error-exitcode=1 hot-reload.c utils.c
 
       - name: Memory check (valgrind quick run)
         run: |
-          echo #!/bin/sh > test_build.sh
-          echo exit
+          echo '#!/bin/sh' > test_build.sh
+          echo 'exit 0' >> test_build.sh
+          chmod +x test_build.sh
+          echo 'int main(){return 0;}' > test.c
+          gcc test.c -o a.out
+          timeout 3s valgrind --leak-check=full --error-exitcode=1 ./hot-reload . ./test_build.sh ./a.out || true
