@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
 set(LANGUAGES C)
-include (GNUInstallDirs)
 
 project(HOT-RELOADER)
 set(CMAKE_C_STANDARD 99)
