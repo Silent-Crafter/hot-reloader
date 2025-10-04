@@ -58,7 +58,7 @@ jobs:
 
       - name: Static analysis (cppcheck)
 #        run: cppcheck --enable=all --error-exitcode=1 hot-reload.c utils.c
-        run: cppcheck --enable=warning,performance,portability --inline-suppr --error-exitcode=1 --suppress=missingIncludeSystem --suppress=wrongPrintfScanfArgNum hot-reload.c utils.c
+        run: cppcheck --enable=warning,performance,portability --inline-suppr --error-exitcode=1 --suppress=missingIncludeSystem hot-reload.c utils.c
 
       - name: Memory check (valgrind quick run)
         run: |
