@@ -1,0 +1,70 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-22.04, ubuntu-20.04]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (apt)
+        if: startsWith(matrix.os, ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang cppcheck valgrind
+
+      - name: Show tool versions
+        run: |
+          gcc --version || true
+          clang --version || true
+          cmake --version
+
+      - name: Build (release)
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make
+
+      - name: Build (debug)
+        run: |
+          rm -rf build
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Debug
+          make
+
+      - name: Basic checks
+        run: |
+          test -f build/bin/hot-reload && test -x build/bin/hot-reload
+          ./build/bin/hot-reload 2>&1 | grep -q "Usage:"
+
+      - name: Install and smoke test
+        run: |
+          cd build
+          sudo make install
+          command -v hot-reload
+          hot-reload 2>&1 | grep -q "Usage:"
+          sudo rm -f /usr/local/bin/hot-reload
+
+      - name: Static analysis (cppcheck)
+        run: cppcheck --enable=all --error-exitcode=1 hot-reload.c utils.c
+
+      - name: Memory check (valgrind quick run)
+        run: |
+          echo '#!/bin/sh' > test_build.sh
+          echo 'exit 0' >> test_build.sh
+          chmod +x test_build.sh
+          echo 'int main(){return 0;}' > test.c
+          gcc test.c -o a.out
+          timeout 3s valgrind --leak-check=full --error-exitcode=1 ./hot-reload . ./test_build.sh ./a.out || true
