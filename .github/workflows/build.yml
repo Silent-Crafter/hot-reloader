@@ -67,4 +67,4 @@ jobs:
           chmod +x test_build.sh
           echo 'int main(){return 0;}' > test.c
           gcc test.c -o a.out
-          timeout 3s valgrind --leak-check=full --error-exitcode=1 ./hot-reload . ./test_build.sh ./a.out || true
+          timeout 3s valgrind --leak-check=full --error-exitcode=1 ./build/bin/hot-reload . ./test_build.sh ./a.out || true
