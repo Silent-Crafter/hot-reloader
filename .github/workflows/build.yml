@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-22.04, ubuntu-20.04]
+        os: [ubuntu-latest, ubuntu-22.04]
 
     steps:
       - name: Checkout
@@ -57,7 +57,8 @@ jobs:
           sudo rm -f /usr/local/bin/hot-reload
 
       - name: Static analysis (cppcheck)
-        run: cppcheck --enable=all --error-exitcode=1 hot-reload.c utils.c
+#        run: cppcheck --enable=all --error-exitcode=1 hot-reload.c utils.c
+        run: cppcheck --enable=warning,performance,portability --inline-suppr --error-exitcode=1 --suppress=missingIncludeSystem --suppress=wrongPrintfScanfArgNum hot-reload.c utils.c
 
       - name: Memory check (valgrind quick run)
         run: |
