@@ -20,35 +20,39 @@ int parse_args(const int argc, char *argv[], struct arg_opts *opts) {
     // Initialize with default values
     opts->exclude_list = 0;
     opts->include_list = 0;
-    opts->exclude_size = -1;
-    opts->include_size = -1;
+    opts->exclude_size = 0;
+    opts->include_size = 0;
 
     while ((opt = getopt(argc, argv, "e:i:")) != -1) {
         switch (opt) {
             case 'e':
                 opts->exclude_size = split_string(optarg, &opts->exclude_list, 
                                                   strlen(optarg), ",");
-                for (size_t i = 0 ; i < opts->exclude_size ; i++) 
+                for (size_t i = 0 ; i < opts->exclude_size ; i++) {
                     VALIDATE_PATH(opts->exclude_list[i]);
+                }
 
-                if (opts->include_size != -1)
+                if (opts->include_size != -1) {
                     FREE_2D(opts->include_list, opts->include_size);
+                }
 
                 opts->include_list = 0;
-                opts->include_size = -1;
+                opts->include_size = 0;
                 break;
 
             case 'i':
                 opts->include_size = split_string(optarg, &opts->include_list,
                                                   strlen(optarg), ",");
-                for (size_t i = 0 ; i < opts->include_size ; i++) 
+                for (size_t i = 0 ; i < opts->include_size ; i++) {
                     VALIDATE_PATH(opts->include_list[i]);
+                }
 
-                if (opts->exclude_size != -1)
+                if (opts->exclude_size != -1) {
                     FREE_2D(opts->exclude_list, opts->exclude_size);
+                }
 
                 opts->exclude_list = 0;
-                opts->exclude_size = -1;
+                opts->exclude_size = 0;
                 break;
 
             case '?':

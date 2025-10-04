@@ -85,7 +85,8 @@ int run(char *file, const int continuous) {
             // lazy clrscr() but idc
             system("clear");
 
-            execv(file, NULL);
+            char *execv_args[] = {file, NULL};
+            execv(file, execv_args);
             int err = errno;
             perror("execv");
             exit(err);
@@ -137,7 +138,7 @@ size_t split_string(const char* src, char ***dest, size_t len, const char* delim
     char *token = strtok(src_cpy, delim);
     while (token) {
         DEBUG("token = %s", token);
-        strncpy(*(split_array+counter), token, strlen(token));
+        char *_ = strncpy(*(split_array+counter), token, strlen(token));
         token = strtok(NULL, delim);
         counter += 1;
     }
