@@ -10,7 +10,26 @@ Hugely inspired by [watchexec](https://github.com/watchexec/watchexec)
 # Usage
 
 ```sh
-hot-reload <path to watch> <build script> <target binary>
+hot-reload [options] <path to watch> <build script> <target binary>
+```
+
+## Options
+
+- `-n <count>` - Limit the number of rebuild cycles (default: unlimited)
+- `-e <list>` - Comma-separated list of paths to exclude
+- `-i <list>` - Comma-separated list of paths to include
+
+## Examples
+
+```sh
+# Run indefinitely (default behavior)
+hot-reload ./src build.sh ./app
+
+# Run exactly 10 times then exit
+hot-reload -n 10 ./src build.sh ./app
+
+# Run once (useful for testing)
+hot-reload -n 1 ./src build.sh ./app
 ```
 
 # Building

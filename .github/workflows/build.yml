@@ -48,6 +48,51 @@ jobs:
           test -f build/bin/hot-reload && test -x build/bin/hot-reload
           ./build/bin/hot-reload 2>&1 | grep -q "Usage:"
 
+      - name: Test -n flag functionality
+        run: |
+          # Check that help shows -n option
+          ./build/bin/hot-reload 2>&1 | grep "n <count>" || exit 1
+          
+          # Test invalid run limit (0) - should fail
+          if ./build/bin/hot-reload -n 0 . ./test_build.sh ./a.out 2>&1 | grep -q "positive integer"; then
+            echo "✓ Correctly rejected n=0"
+          else
+            echo "✗ Should have rejected n=0"
+            exit 1
+          fi
+          
+          # Test invalid run limit (negative) - should fail  
+          if ./build/bin/hot-reload -n -1 . ./test_build.sh ./a.out 2>&1 | grep -q "positive integer"; then
+            echo "✓ Correctly rejected n=-1"
+          else
+            echo "✗ Should have rejected n=-1"
+            exit 1
+          fi
+          
+          # Test that -n flag is accepted with valid value
+          # Create test environment
+          mkdir -p test_watch_dir
+          echo '#!/bin/sh' > test_build.sh
+          echo 'exit 0' >> test_build.sh
+          chmod +x test_build.sh
+          echo '#!/bin/sh' > test_app.sh
+          echo 'echo "Test run"' >> test_app.sh
+          echo 'exit 0' >> test_app.sh
+          chmod +x test_app.sh
+          
+          # Test with -n 1 (run once) - should show "Run 1/1" message
+          OUTPUT=$(timeout 2s ./build/bin/hot-reload -n 1 test_watch_dir ./test_build.sh ./test_app.sh 2>&1 || true)
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -q "Run 1"; then
+            echo "✓ Successfully ran with -n 1 flag"
+          else
+            echo "✗ Failed to run with -n 1 flag"
+            exit 1
+          fi
+          
+          # Cleanup
+          rm -rf test_watch_dir test_build.sh test_app.sh
+
       - name: Install and smoke test
         run: |
           cd build

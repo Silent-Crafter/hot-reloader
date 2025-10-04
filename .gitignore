@@ -1,4 +1,5 @@
 hot-reload.o
 hot-reload
+utils.o
 build/
 .idea

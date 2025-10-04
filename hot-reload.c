@@ -12,6 +12,7 @@ struct arg_opts {
     char **include_list;
     size_t exclude_size;
     size_t include_size;
+    int run_limit;  // -1 means unlimited, 0+ means specific limit
 };
 
 int parse_args(const int argc, char *argv[], struct arg_opts *opts) {
@@ -22,8 +23,9 @@ int parse_args(const int argc, char *argv[], struct arg_opts *opts) {
     opts->include_list = 0;
     opts->exclude_size = 0;
     opts->include_size = 0;
+    opts->run_limit = -1;  // -1 means unlimited
 
-    while ((opt = getopt(argc, argv, "e:i:")) != -1) {
+    while ((opt = getopt(argc, argv, "e:i:n:")) != -1) {
         switch (opt) {
             case 'e':
                 opts->exclude_size = split_string(optarg, &opts->exclude_list, 
@@ -55,6 +57,14 @@ int parse_args(const int argc, char *argv[], struct arg_opts *opts) {
                 opts->exclude_size = 0;
                 break;
 
+            case 'n':
+                opts->run_limit = atoi(optarg);
+                if (opts->run_limit < 1) {
+                    ERROR("Run limit must be a positive integer\n");
+                    exit(EXIT_FAILURE);
+                }
+                break;
+
             case '?':
                 ERROR("Unknown option: %c\n", optopt);
                 exit(EXIT_FAILURE);
@@ -69,14 +79,22 @@ int parse_args(const int argc, char *argv[], struct arg_opts *opts) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 4) {
-        INFO("Usage: " "hot-reload <dir to watch> <build script> <target binary>");
+    struct arg_opts opts;
+    parse_args(argc, argv, &opts);
+
+    // After parsing options, optind points to first non-option argument
+    if (argc - optind != 3) {
+        INFO("Usage: hot-reload [options] <dir to watch> <build script> <target binary>");
+        INFO("Options:");
+        INFO("  -n <count>    Limit the number of rebuild cycles (default: unlimited)");
+        INFO("  -e <list>     Comma-separated list of paths to exclude");
+        INFO("  -i <list>     Comma-separated list of paths to include");
         return EXIT_FAILURE;
     }
 
-    char *watch_dir = argv[1];
-    char *build_script = argv[2];
-    char *target_binary = argv[3];
+    char *watch_dir = argv[optind];
+    char *build_script = argv[optind + 1];
+    char *target_binary = argv[optind + 2];
 
     if (!exists(watch_dir, CHECK_DIR)) {
         ERROR("Directory \"%s\" does not exist", watch_dir);
@@ -95,6 +113,7 @@ int main(int argc, char *argv[]) {
 
     const int fd = add_watch_recursive(watch_dir);
     int modified = 1;
+    int run_counter = 0;
 
     pid_t child_proccess = -1;
     do {
@@ -102,6 +121,18 @@ int main(int argc, char *argv[]) {
             if (child_proccess != -1 && child_proccess != 0) {
                 DEBUG("KILLING PREVIOUS BINARY");
                 kill_child(&child_proccess);
+            }
+
+            // Increment counter and check limit
+            run_counter++;
+            if (opts.run_limit > 0) {
+                INFO("Run %d/%d", run_counter, opts.run_limit);
+                if (run_counter > opts.run_limit) {
+                    INFO("Reached run limit of %d. Exiting.", opts.run_limit);
+                    exit(EXIT_SUCCESS);
+                }
+            } else {
+                INFO("Run %d (unlimited)", run_counter);
             }
 
             DEBUG("File modified. Running build_script");
