@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     do {
         if (modified) {
             if (child_proccess != -1 && child_proccess != 0) {
-                DEBUG("KILLING PREVIOUS BINARY", modified, child_proccess);
+                DEBUG("KILLING PREVIOUS BINARY");
                 kill_child(&child_proccess);
             }
 
