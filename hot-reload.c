@@ -13,6 +13,7 @@ struct arg_opts {
     size_t exclude_size;
     size_t include_size;
     int run_limit;  // -1 means unlimited, 0+ means specific limit
+    int use_input_file;
 };
 
 int parse_args(const int argc, char *argv[], struct arg_opts *opts) {
@@ -24,8 +25,9 @@ int parse_args(const int argc, char *argv[], struct arg_opts *opts) {
     opts->exclude_size = 0;
     opts->include_size = 0;
     opts->run_limit = -1;  // -1 means unlimited
+    opts->use_input_file = 0;
 
-    while ((opt = getopt(argc, argv, "e:i:n:")) != -1) {
+    while ((opt = getopt(argc, argv, "e:i:n:s")) != -1) {
         switch (opt) {
             case 'e':
                 opts->exclude_size = split_string(optarg, &opts->exclude_list, 
@@ -34,7 +36,7 @@ int parse_args(const int argc, char *argv[], struct arg_opts *opts) {
                     VALIDATE_PATH(opts->exclude_list[i]);
                 }
 
-                if (opts->include_size != -1) {
+                if (opts->include_size != 0) {
                     FREE_2D(opts->include_list, opts->include_size);
                 }
 
@@ -49,7 +51,7 @@ int parse_args(const int argc, char *argv[], struct arg_opts *opts) {
                     VALIDATE_PATH(opts->include_list[i]);
                 }
 
-                if (opts->exclude_size != -1) {
+                if (opts->exclude_size != 0) {
                     FREE_2D(opts->exclude_list, opts->exclude_size);
                 }
 
@@ -63,6 +65,10 @@ int parse_args(const int argc, char *argv[], struct arg_opts *opts) {
                     ERROR("Run limit must be a positive integer\n");
                     exit(EXIT_FAILURE);
                 }
+                break;
+  
+            case 's':
+                opts->use_input_file = 1;
                 break;
 
             case '?':
@@ -86,7 +92,8 @@ int main(int argc, char *argv[]) {
     if (argc - optind != 3) {
         INFO("Usage: hot-reload [options] <dir to watch> <build script> <target binary>");
         INFO("Options:");
-        INFO("  -n <count>    Limit the number of rebuild cycles (default: unlimited)");
+        INFO("  -s            Automatically pass inputs from 'inputs.txt' file");
+        INFO("  -n <count>    Limit the number of rebuild cycles (default: .unlimited)");
         INFO("  -e <list>     Comma-separated list of paths to exclude");
         INFO("  -i <list>     Comma-separated list of paths to include");
         return EXIT_FAILURE;
@@ -136,7 +143,7 @@ int main(int argc, char *argv[]) {
             }
 
             DEBUG("File modified. Running build_script");
-            int retval = run(build_script, 0);
+            int retval = build(build_script);
             if (retval == -1) {
                 exit(EXIT_FAILURE);
             }
@@ -148,7 +155,7 @@ int main(int argc, char *argv[]) {
 
         // Child process to run the application
         if (child_proccess == 0) {
-            int retval = run(target_binary, 1);
+            int retval = run(target_binary, opts.use_input_file);
             if (retval == -1) exit(EXIT_FAILURE);
             else exit(EXIT_SUCCESS);
         }

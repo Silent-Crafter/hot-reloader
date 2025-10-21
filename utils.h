@@ -25,13 +25,13 @@
 
 #ifdef DO_DEBUG
 #define DEBUG(M, ...) \
-    fprintf(stderr, RESET BLUE "[DEBUG] " M RESET "\n", ##__VA_ARGS__)
+    fprintf(stderr, RESET BLUE "[ DEBUG ] " M RESET "\n", ##__VA_ARGS__)
 #else
 #define DEBUG(M, ...) ;
 #endif
 
-#define ERROR(M, ...) fprintf(stderr, RESET RED "[ERROR] " M RESET "\n", ##__VA_ARGS__)
-#define INFO(M, ...) fprintf(stderr, RESET GREEN "[INFO] " M RESET "\n", ##__VA_ARGS__)
+#define ERROR(M, ...) fprintf(stderr, RESET RED "[ ERROR ] " M RESET "\n", ##__VA_ARGS__)
+#define INFO(M, ...) fprintf(stderr, RESET GREEN "[ INFO ] " M RESET "\n", ##__VA_ARGS__)
 
 #define MALLOC_2D(arr, r, c) \
     arr = (char**) malloc(sizeof(char*)*r); \
@@ -49,6 +49,8 @@ enum __exist_opt { CHECK_ANY, CHECK_FILE, CHECK_DIR };
 int exists(const char*, enum __exist_opt);
 void __add_watch_recursive(int, const char*);
 int add_watch_recursive(const char*);
+int build(char*);
+[[deprecated]] int __run(char*, int);
 int run(char*, int);
 void kill_child(int*);
 size_t split_string(const char*, char***, size_t, const char*);
